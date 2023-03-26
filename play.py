@@ -4,11 +4,12 @@ from PIL import Image, ImageTk
 import glob
 import random
 import tkinter as Tk
+from datetime import datetime
 
 class GUI:
     def __init__(self, mainwin, screen_width, screen_height):
-        self.time_per_image = 3 # seconds
-        self.image_folder = r'C:\Skripte und Co\Bilderrahmen\Beispielbilder\**\*.jpg'
+        self.time_per_image = 10 # seconds
+        self.image_folder = r'C:\Users\Bilder_bearbeitet\sichtbar\**\*.jpg'
         
         self.mainwin = mainwin
         self.screen_height = screen_height
@@ -25,18 +26,21 @@ class GUI:
         for filename in glob.glob(self.image_folder, recursive=True): #assuming gif
             im=Image.open(filename)
             self.list_filepaths_all.append(filename)
-            self.list_timestamps_all.append(im._getexif()[36867])
-        
+            try:
+                self.list_timestamps_all.append(im._getexif()[36867])
+            except:
+                self.list_timestamps_all.append('0000:99:99 99:99:99')
+
         # go through list and sort in normal and anniversary
-        today_day_str = '04'
-        today_month_str = '01'
-        today_year_str = '2023'
+        today_day_str = datetime.today().strftime("%d")
+        today_month_str = datetime.today().strftime("%m")
+        today_year_str = datetime.today().strftime("%Y")
         self.list_filepaths_anniversary = []
         self.list_years_anniversary = []
         self.list_filepaths_rest = []
         for i in range(len(self.list_filepaths_all)):
-            day_str = self.list_timestamps_all[i][5:7]
-            month_str = self.list_timestamps_all[i][8:10]
+            day_str = self.list_timestamps_all[i][8:10]
+            month_str = self.list_timestamps_all[i][5:7]
             if (day_str == today_day_str) and (month_str == today_month_str):
                 self.list_filepaths_anniversary.append(self.list_filepaths_all[i])
                 years = int(today_year_str) - int(self.list_timestamps_all[i][0:4])
@@ -64,11 +68,11 @@ class GUI:
         self.counter_all = 0
         self.counter_anniversary = 0
         self.counter_rest = 0
-    
+
         self.slideShow()
 
     def slideShow(self):
-        if (self.counter_all % self.anniversary_every) == 0:
+        if ((self.counter_all % self.anniversary_every) == 0) and (len(self.list_filepaths_anniversary) > 0):
             index = self.counter_anniversary % len(self.list_filepaths_anniversary)
             index_randomized = self.indices_anniversary_random[index]
             image = Image.open(self.list_filepaths_anniversary[index_randomized])
