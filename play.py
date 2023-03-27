@@ -32,7 +32,7 @@ class GUI:
                 self.list_timestamps_all.append('0000:99:99 99:99:99')
 
         # go through list and sort in normal and anniversary
-        today_day_str = datetime.today().strftime("%d")
+        self.today_day_str = datetime.today().strftime("%d")
         today_month_str = datetime.today().strftime("%m")
         today_year_str = datetime.today().strftime("%Y")
         self.list_filepaths_anniversary = []
@@ -41,7 +41,7 @@ class GUI:
         for i in range(len(self.list_filepaths_all)):
             day_str = self.list_timestamps_all[i][8:10]
             month_str = self.list_timestamps_all[i][5:7]
-            if (day_str == today_day_str) and (month_str == today_month_str):
+            if (day_str == self.today_day_str) and (month_str == today_month_str):
                 self.list_filepaths_anniversary.append(self.list_filepaths_all[i])
                 years = int(today_year_str) - int(self.list_timestamps_all[i][0:4])
                 self.list_years_anniversary.append(years)
@@ -72,42 +72,45 @@ class GUI:
         self.slideShow()
 
     def slideShow(self):
-        if ((self.counter_all % self.anniversary_every) == 0) and (len(self.list_filepaths_anniversary) > 0):
-            index = self.counter_anniversary % len(self.list_filepaths_anniversary)
-            index_randomized = self.indices_anniversary_random[index]
-            image = Image.open(self.list_filepaths_anniversary[index_randomized])
-            year = self.list_years_anniversary[index_randomized]
-            self.counter_anniversary += 1
-            anniversary = True
+        if datetime.today().strftime("%d") == self.today_day_str:
+            if ((self.counter_all % self.anniversary_every) == 0) and (len(self.list_filepaths_anniversary) > 0):
+                index = self.counter_anniversary % len(self.list_filepaths_anniversary)
+                index_randomized = self.indices_anniversary_random[index]
+                image = Image.open(self.list_filepaths_anniversary[index_randomized])
+                year = self.list_years_anniversary[index_randomized]
+                self.counter_anniversary += 1
+                anniversary = True
+            else:
+                index = self.counter_rest % len(self.list_filepaths_rest)
+                index_randomized = self.indices_rest_random[index]
+                image = Image.open(self.list_filepaths_rest[index_randomized])
+                self.counter_rest += 1
+                anniversary = False
+            self.counter_all += 1
+            
+            img_aspect = image.size[0]/image.size[1]
+            if img_aspect < self.screen_aspect_ratio:
+                wdt = int(img_aspect * self.screen_height)  
+                image_resize = image.resize((wdt, self.screen_height))
+            else:
+                hgt = int(self.screen_width / img_aspect)
+                image_resize = image.resize((self.screen_width, hgt))
+            
+            self.photo = ImageTk.PhotoImage(image_resize)
+            self.canvas.create_image(int(self.screen_width / 2), int(self.screen_height / 2), image=self.photo)
+            
+            if anniversary:
+                self.text = self.canvas.create_text(self.screen_width/2+2, 0.95*self.screen_height+2, text="heute vor {} Jahren...".format(year), fill='#202020', font=('garamond', 40, "bold italic"), anchor='s')
+                self.text = self.canvas.create_text(self.screen_width/2, 0.95*self.screen_height, text="heute vor {} Jahren...".format(year), fill="white", font=('garamond', 40, "bold italic"), anchor='s')
+            else:
+                try:
+                    self.canvas.delete(self.text)
+                except:
+                    pass
+            
+            root.after(1000*self.time_per_image, self.slideShow)
         else:
-            index = self.counter_rest % len(self.list_filepaths_rest)
-            index_randomized = self.indices_rest_random[index]
-            image = Image.open(self.list_filepaths_rest[index_randomized])
-            self.counter_rest += 1
-            anniversary = False
-        self.counter_all += 1
-        
-        img_aspect = image.size[0]/image.size[1]
-        if img_aspect < self.screen_aspect_ratio:
-            wdt = int(img_aspect * self.screen_height)  
-            image_resize = image.resize((wdt, self.screen_height))
-        else:
-            hgt = int(self.screen_width / img_aspect)
-            image_resize = image.resize((self.screen_width, hgt))
-        
-        self.photo = ImageTk.PhotoImage(image_resize)
-        self.canvas.create_image(int(self.screen_width / 2), int(self.screen_height / 2), image=self.photo)
-        
-        if anniversary:
-            self.text = self.canvas.create_text(self.screen_width/2+2, 0.95*self.screen_height+2, text="heute vor {} Jahren...".format(year), fill='#202020', font=('garamond', 40, "bold italic"), anchor='s')
-            self.text = self.canvas.create_text(self.screen_width/2, 0.95*self.screen_height, text="heute vor {} Jahren...".format(year), fill="white", font=('garamond', 40, "bold italic"), anchor='s')
-        else:
-            try:
-                self.canvas.delete(self.text)
-            except:
-                pass
-        
-        root.after(1000*self.time_per_image, self.slideShow) 
+            root.destroy
 
 
 # --- main ---
